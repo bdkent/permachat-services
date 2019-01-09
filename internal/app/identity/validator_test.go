@@ -15,6 +15,6 @@ func TestSha3Hex(t *testing.T) {
 		t.Errorf("unexpected err: %v", err)
 	}
 	if expected != actual {
-		t.Error("Expected sh3 hash to work!")
+		t.Errorf("Expected sha3 hash to work!\nActual: %v\nExpected: %v", actual, expected)
 	}
 }

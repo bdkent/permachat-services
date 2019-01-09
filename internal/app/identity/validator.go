@@ -4,9 +4,9 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/ethereum/go-ethereum/crypto/sha3"
 	"github.com/palantir/stacktrace"
 	"github.com/spf13/viper"
+	"golang.org/x/crypto/sha3"
 )
 
 // QueryResult =
@@ -28,7 +28,7 @@ type Validator interface {
 }
 
 func sha3Hex(input string) (string, error) {
-	hash := sha3.NewKeccak256()
+	hash := sha3.NewLegacyKeccak256()
 	_, err := hash.Write([]byte(input))
 	if err != nil {
 		return "", stacktrace.Propagate(err, fmt.Sprintf("unable to hash: %v", input))
