@@ -40,6 +40,10 @@ func main() {
 
 	fmt.Println("WAITING FOR EVENTS")
 
+	handler.handlePending()
+
+	fmt.Println("PROCESSED PENDING")
+
 	exitSignal := make(chan os.Signal)
 	signal.Notify(exitSignal, syscall.SIGINT, syscall.SIGTERM)
 	<-exitSignal

@@ -52,20 +52,36 @@ func (handler *RequestHandler) awaitEvents() {
 
 	for {
 		msg := <-handler.events
-
-		fmt.Println("new message")
-
-		err := handle(msg, handler.validatorRegistry, handler.contract, handler.txContext)
-		if err != nil {
-			log.Printf("unable to process request: %#v\nerror: %v", msg, err)
-		}
-
+		fmt.Printf("event request id: %v\n", msg.IdentityRequestId)
+		handleAll(handler.validatorRegistry, handler.contract, handler.txContext)
 	}
 }
 
-func handle(msg *PermaChatNewRequestEvent, validatorRegistry *ValidatorRegistry, contract *PermaChat, txCon *TransactionContext) error {
-	fmt.Printf("event request id: %v\n", msg.IdentityRequestId)
+func handleAll(validatorRegistry *ValidatorRegistry, contract *PermaChat, txCon *TransactionContext) {
+	for hasMoreRequests(contract) {
+		err := handle(validatorRegistry, contract, txCon)
+		if err != nil {
+			log.Printf("unable to process request: %v", err)
+		}
+	}
+}
 
+func (handler *RequestHandler) handlePending() {
+	log.Printf("starting to handle pending")
+	handleAll(handler.validatorRegistry, handler.contract, handler.txContext)
+	log.Printf("caught up!")
+}
+
+func hasMoreRequests(contract *PermaChat) bool {
+	_, err := contract.GetNextRequest(nil)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func handle(validatorRegistry *ValidatorRegistry, contract *PermaChat, txCon *TransactionContext) error {
+	log.Printf("handle next request")
 	request, err := contract.GetNextRequest(nil)
 	if err != nil {
 		return stacktrace.Propagate(err, "Could not get next request")
