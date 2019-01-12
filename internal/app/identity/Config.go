@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fmt"
+	"io/ioutil"
 	"log"
 
+	"github.com/palantir/stacktrace"
 	"github.com/spf13/viper"
 )
 
@@ -16,16 +19,35 @@ func safeSub(v *viper.Viper, path string) *viper.Viper {
 
 func initializeConfig(appName string) *viper.Viper {
 
-	viper := viper.New()
+	config := viper.New()
 
-	viper.SetConfigName("config")
-	viper.AddConfigPath("/etc/" + appName + "/")
-	viper.AddConfigPath("$HOME/." + appName)
-	viper.AddConfigPath(".")
+	config.SetConfigName("config")
+	config.AddConfigPath("/etc/" + appName + "/")
+	config.AddConfigPath("$HOME/." + appName)
+	config.AddConfigPath(".")
 
-	if err := viper.ReadInConfig(); err != nil {
+	fromDir(config, "/run/secrets")
+
+	if err := config.ReadInConfig(); err != nil {
 		log.Fatalf("Error reading config file, %s", err)
 	}
 
-	return viper
+	return config
+}
+
+func fromDir(v *viper.Viper, path string) (*viper.Viper, error) {
+
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, fmt.Sprintf("expected directory of config properties: %v", path))
+	}
+
+	for _, f := range files {
+		key := f.Name()
+		bs, _ := ioutil.ReadFile(path + "/" + key)
+		value := string(bs)
+		v.Set(key, value)
+	}
+
+	return v, nil
 }

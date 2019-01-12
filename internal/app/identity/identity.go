@@ -11,10 +11,9 @@ import (
 func main() {
 	fmt.Println("START")
 	viper := initializeConfig("permachat")
-	// fmt.Println(viper)
 
 	fmt.Println("initializing contract")
-	contract, txContext, err := initializeContract(viper.Sub("contract.private"))
+	contract, txContext, err := initializeContract(viper.Sub("permachat"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -32,7 +31,7 @@ func main() {
 	}
 
 	fmt.Println("initializing next request handler")
-	handler, err := NewRequestHandler(viper, contract, txContext, validators)
+	handler, err := NewRequestHandler(viper.Sub("permachat.identity"), contract, txContext, validators)
 	if err != nil {
 		fmt.Println("yug")
 		log.Fatal(err)

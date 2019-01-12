@@ -23,9 +23,22 @@ type TransactionContext struct {
 
 // ContractConfiguration is
 type ContractConfiguration struct {
-	ClientURI       string `json:"clientUri"`
-	AdminPassword   string `json:"adminPassword"`
-	ContractAddress string `json:"contractAddress"`
+	Ethereum struct {
+		WS struct {
+			Address string `json:"address"`
+			Port    string `json:"port"`
+		} `json:"ws"`
+	} `json:"ethereum"`
+
+	Identity struct {
+		Contract struct {
+			Address string `json:"address"`
+		} `json:"contract"`
+
+		Admin struct {
+			PrivateKeyHex string `json:"privateKeyHex"`
+		} `json:"admin"`
+	} `json:"identity"`
 }
 
 func initializeContract(viper *viper.Viper) (*PermaChat, *TransactionContext, error) {
@@ -37,16 +50,16 @@ func initializeContract(viper *viper.Viper) (*PermaChat, *TransactionContext, er
 		return nil, nil, stacktrace.Propagate(err, "Could not load contract config")
 	}
 
-	// fmt.Printf("config: %#v", config)
+	clientURI := "ws://" + config.Ethereum.WS.Address + ":" + config.Ethereum.WS.Port
 
-	client, err := ethclient.Dial(config.ClientURI)
+	client, err := ethclient.Dial(clientURI)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, fmt.Sprintf("could not connect to ethereum client: %v", config.ClientURI))
+		return nil, nil, stacktrace.Propagate(err, fmt.Sprintf("could not connect to ethereum client: %v", clientURI))
 	}
 
-	privateKey, err := crypto.HexToECDSA(config.AdminPassword)
+	privateKey, err := crypto.HexToECDSA(config.Identity.Admin.PrivateKeyHex)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, fmt.Sprintf("could not create private key"))
+		return nil, nil, stacktrace.Propagate(err, fmt.Sprintf("could not create private key: %v", config.Identity.Admin.PrivateKeyHex))
 	}
 
 	publicKey := privateKey.Public()
@@ -57,7 +70,7 @@ func initializeContract(viper *viper.Viper) (*PermaChat, *TransactionContext, er
 
 	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
 
-	contractAddress := common.HexToAddress(config.ContractAddress)
+	contractAddress := common.HexToAddress(config.Identity.Contract.Address)
 
 	instance, err := NewPermaChat(contractAddress, client)
 	if err != nil {
