@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"strings"
 
 	"github.com/palantir/stacktrace"
 	"github.com/spf13/viper"
@@ -25,6 +26,8 @@ func initializeConfig(appName string) *viper.Viper {
 	config.AddConfigPath("/etc/" + appName + "/")
 	config.AddConfigPath("$HOME/." + appName)
 	config.AddConfigPath(".")
+	config.AutomaticEnv()
+	config.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	fromDir(config, "/run/secrets")
 
