@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/hex"
 	"fmt"
+	"log"
 
 	"github.com/palantir/stacktrace"
 	"github.com/spf13/viper"
@@ -39,20 +40,20 @@ func sha3Hex(input string) (string, error) {
 }
 
 func validate(validator Validator, address string, provider string, username string, identitifer string) (bool, error) {
-	fmt.Printf("validate(%#v, %#v, %#v, %#v)\n", address, provider, username, identitifer)
+	log.Printf("validate(%#v, %#v, %#v, %#v)\n", address, provider, username, identitifer)
 	expectedToken, err := sha3Hex(provider + username + address)
 	if err != nil {
 		return false, err
 	}
-	fmt.Printf("expectedToken: %v\n", expectedToken)
+	log.Printf("expectedToken: %v\n", expectedToken)
 	result, err := validator.query(username, identitifer)
 	if err != nil {
 		return false, err
 	}
-	fmt.Printf("result: %v\n", result)
+	log.Printf("result: %v\n", result)
 
 	success := result.actualUsername == username && result.actualToken == expectedToken
-	fmt.Printf("success: %v\n", success)
+	log.Printf("success: %v\n", success)
 
 	return success, nil
 }
@@ -65,7 +66,7 @@ type ValidatorRegistry struct {
 
 // NewValidatorRegistry =
 func NewValidatorRegistry(config *viper.Viper) *ValidatorRegistry {
-	return &ValidatorRegistry{mapping: make(map[string]Validator), config: config.Sub("validators")}
+	return &ValidatorRegistry{mapping: make(map[string]Validator), config: config}
 }
 
 // NewValidatorRegistryWithMapping =
@@ -87,7 +88,7 @@ func NewValidatorRegistryWithMapping(config *viper.Viper, mapping map[string]Val
 
 func (registry ValidatorRegistry) register(provider string, validator Validator) (bool, error) {
 	registry.mapping[provider] = validator
-	return validator.initialize(safeSub(registry.config, provider))
+	return validator.initialize(registry.config)
 }
 
 func (registry ValidatorRegistry) validate(address string, provider string, username string, identitifer string) (bool, error) {

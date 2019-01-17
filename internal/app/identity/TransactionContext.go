@@ -21,45 +21,18 @@ type TransactionContext struct {
 	fromAddress *common.Address
 }
 
-// ContractConfiguration is
-type ContractConfiguration struct {
-	Ethereum struct {
-		WS struct {
-			Address string `json:"address"`
-			Port    string `json:"port"`
-		} `json:"ws"`
-	} `json:"ethereum"`
+func initializeContract(config *viper.Viper) (*PermaChat, *TransactionContext, error) {
 
-	Identity struct {
-		Contract struct {
-			Address string `json:"address"`
-		} `json:"contract"`
-
-		Admin struct {
-			PrivateKeyHex string `json:"privateKeyHex"`
-		} `json:"admin"`
-	} `json:"identity"`
-}
-
-func initializeContract(viper *viper.Viper) (*PermaChat, *TransactionContext, error) {
-
-	var config ContractConfiguration
-
-	err := viper.Unmarshal(&config)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Could not load contract config")
-	}
-
-	clientURI := "ws://" + config.Ethereum.WS.Address + ":" + config.Ethereum.WS.Port
+	clientURI := "ws://" + config.GetString("permachat_ethereum_ws_address") + ":" + config.GetString("permachat_ethereum_ws_port")
 
 	client, err := ethclient.Dial(clientURI)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, fmt.Sprintf("could not connect to ethereum client: %v", clientURI))
 	}
 
-	privateKey, err := crypto.HexToECDSA(config.Identity.Admin.PrivateKeyHex)
+	privateKey, err := crypto.HexToECDSA(config.GetString("permachat_identity_admin_privatekeyhex"))
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, fmt.Sprintf("could not create private key: %v", config.Identity.Admin.PrivateKeyHex))
+		return nil, nil, stacktrace.Propagate(err, fmt.Sprintf("could not create private key"))
 	}
 
 	publicKey := privateKey.Public()
@@ -70,7 +43,7 @@ func initializeContract(viper *viper.Viper) (*PermaChat, *TransactionContext, er
 
 	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
 
-	contractAddress := common.HexToAddress(config.Identity.Contract.Address)
+	contractAddress := common.HexToAddress(config.GetString("permachat_identity_contract_address"))
 
 	instance, err := NewPermaChat(contractAddress, client)
 	if err != nil {

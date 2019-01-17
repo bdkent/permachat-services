@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/ethereum/go-ethereum/event"
@@ -19,7 +18,7 @@ type RequestHandler struct {
 }
 
 // NewRequestHandler =
-func NewRequestHandler(viper *viper.Viper, contract *PermaChat, txContext *TransactionContext, validators map[string]Validator) (*RequestHandler, error) {
+func NewRequestHandler(config *viper.Viper, contract *PermaChat, txContext *TransactionContext, validators map[string]Validator) (*RequestHandler, error) {
 
 	events := make(chan *PermaChatNewRequestEvent)
 
@@ -28,7 +27,7 @@ func NewRequestHandler(viper *viper.Viper, contract *PermaChat, txContext *Trans
 		return nil, stacktrace.Propagate(err, "Could not start watching for request events transactor")
 	}
 
-	registry, err := NewValidatorRegistryWithMapping(viper, validators)
+	registry, err := NewValidatorRegistryWithMapping(config, validators)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "unable to create validator registry")
 	}
@@ -47,12 +46,12 @@ func NewRequestHandler(viper *viper.Viper, contract *PermaChat, txContext *Trans
 }
 
 func (handler *RequestHandler) awaitEvents() {
-	fmt.Println("nextRequestHandler")
-	fmt.Printf("handler: %#v\n", handler)
+	log.Println("nextRequestHandler")
+	log.Printf("handler: %#v\n", handler)
 
 	for {
 		msg := <-handler.events
-		fmt.Printf("event request id: %v\n", msg.IdentityRequestId)
+		log.Printf("event request id: %v\n", msg.IdentityRequestId)
 		handleAll(handler.validatorRegistry, handler.contract, handler.txContext)
 	}
 }
@@ -87,7 +86,7 @@ func handle(validatorRegistry *ValidatorRegistry, contract *PermaChat, txCon *Tr
 		return stacktrace.Propagate(err, "Could not get next request")
 	}
 
-	fmt.Printf("next request: %v\n", request)
+	log.Printf("next request: %v\n", request)
 
 	isValid, err := validatorRegistry.validate(request.Requestor.String(), request.Provider, request.UserName, request.Identifier)
 	if err != nil {

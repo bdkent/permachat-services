@@ -20,21 +20,21 @@ func newTwitterValidator() Validator {
 	return twitterValidator{bearerToken: ""}
 }
 
-// TwitterValidatorParams =
-type TwitterValidatorParams struct {
-	APIKey       string `json:"apiKey"`
-	APISecretKey string `json:"apiSecretKey"`
-}
-
 func (v twitterValidator) initialize(config *viper.Viper) (bool, error) {
-	var params TwitterValidatorParams
-	err := config.Unmarshal(&params)
-	if err != nil {
-		return false, stacktrace.Propagate(err, fmt.Sprintf("unable to obtain config info for Twitter initialization: %v", config))
+
+	apiKey := config.GetString("permachat_identity_validators_twitter_apikey")
+	apiSecretKey := config.GetString("permachat_identity_validators_twitter_apisecretkey")
+
+	if apiKey == "" {
+		return false, fmt.Errorf("did not provide Twitter API Key")
 	}
 
-	encodedKey, _ := url.Parse(params.APIKey)
-	encodedSecret, _ := url.Parse(params.APISecretKey)
+	if apiSecretKey == "" {
+		return false, fmt.Errorf("did not provide Twitter API Secret Key")
+	}
+
+	encodedKey, _ := url.Parse(apiKey)
+	encodedSecret, _ := url.Parse(apiSecretKey)
 	token := encodedKey.String() + ":" + encodedSecret.String()
 
 	encodedToken := base64.StdEncoding.EncodeToString([]byte(token))

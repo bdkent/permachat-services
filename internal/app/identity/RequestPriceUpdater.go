@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math/big"
 
 	"github.com/palantir/stacktrace"
@@ -9,16 +10,16 @@ import (
 
 // UpdateRequestPrice is
 func updateRequestPrice(contract *PermaChat, txContext *TransactionContext) error {
-	fmt.Printf("updateRequestPrice")
+	log.Printf("updateRequestPrice")
 	price := big.NewInt(10000000000000000) // 10 Finney
 
 	res1, err := contract.RequestPrice(nil)
 	if err != nil {
-		fmt.Printf("hmmm")
+		log.Printf("hmmm")
 		return stacktrace.Propagate(err, "Could not get current request price")
 	}
 
-	fmt.Printf("transaction: %#v \n", res1)
+	log.Printf("transaction: %#v \n", res1)
 
 	auth1, err := txContext.nextTransactor()
 	if err != nil {
@@ -30,7 +31,9 @@ func updateRequestPrice(contract *PermaChat, txContext *TransactionContext) erro
 		return stacktrace.Propagate(err, "Could not set new request price")
 	}
 
-	fmt.Println(res2)
+	if res2 == nil {
+		return fmt.Errorf("go is stupid")
+	}
 
 	return nil
 }
