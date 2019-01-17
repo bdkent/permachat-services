@@ -26,6 +26,8 @@ func initializeConfig(appName string) *viper.Viper {
 	config.AddConfigPath("$HOME/." + appName)
 	config.AddConfigPath(".")
 
+	config.AutomaticEnv()
+
 	fromDir(config, "/run/secrets")
 
 	if err := config.ReadInConfig(); err != nil {
