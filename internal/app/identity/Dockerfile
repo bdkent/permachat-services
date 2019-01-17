@@ -15,6 +15,7 @@ RUN go build -o /go/bin/abigen ./cmd/abigen
 
 RUN git clone --recursive https://github.com/ethereum/solidity.git /tmp/solidity
 WORKDIR /tmp/solidity
+RUN git checkout v0.5.2
 RUN ./scripts/install_deps.sh
 RUN ./scripts/build.sh
 
