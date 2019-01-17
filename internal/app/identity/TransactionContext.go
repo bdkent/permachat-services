@@ -5,6 +5,8 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
+	"os"
+	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -21,16 +23,46 @@ type TransactionContext struct {
 	fromAddress *common.Address
 }
 
+func printEnvKeys() {
+	for _, e := range os.Environ() {
+		pair := strings.Split(e, "=")
+		fmt.Println(pair[0])
+	}
+}
+
 func initializeContract(config *viper.Viper) (*PermaChat, *TransactionContext, error) {
 
-	clientURI := "ws://" + config.GetString("permachat_ethereum_ws_address") + ":" + config.GetString("permachat_ethereum_ws_port")
+	ethereumAddress := config.GetString("permachat_ethereum_ws_address")
+	if ethereumAddress == "" {
+		printEnvKeys()
+		return nil, nil, fmt.Errorf("expected config value for ethereum address")
+	}
+	ethereumPort := config.GetString("permachat_ethereum_ws_port")
+	if ethereumPort == "" {
+		printEnvKeys()
+		return nil, nil, fmt.Errorf("expected config value for ethereum port")
+	}
+
+	privateKeyHex := config.GetString("permachat_identity_admin_privatekeyhex")
+	if privateKeyHex == "" {
+		printEnvKeys()
+		return nil, nil, fmt.Errorf("expected config value for private key")
+	}
+
+	contractAddressHex := config.GetString("permachat_identity_contract_address")
+	if contractAddressHex == "" {
+		printEnvKeys()
+		return nil, nil, fmt.Errorf("expected config value for contract address")
+	}
+
+	clientURI := fmt.Sprintf("ws://%v:%v", ethereumAddress, ethereumPort)
 
 	client, err := ethclient.Dial(clientURI)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, fmt.Sprintf("could not connect to ethereum client: %v", clientURI))
 	}
 
-	privateKey, err := crypto.HexToECDSA(config.GetString("permachat_identity_admin_privatekeyhex"))
+	privateKey, err := crypto.HexToECDSA(privateKeyHex)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, fmt.Sprintf("could not create private key"))
 	}
@@ -43,7 +75,7 @@ func initializeContract(config *viper.Viper) (*PermaChat, *TransactionContext, e
 
 	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
 
-	contractAddress := common.HexToAddress(config.GetString("permachat_identity_contract_address"))
+	contractAddress := common.HexToAddress(contractAddressHex)
 
 	instance, err := NewPermaChat(contractAddress, client)
 	if err != nil {
