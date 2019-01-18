@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"strings"
 
 	"github.com/palantir/stacktrace"
 	"github.com/spf13/viper"
@@ -47,7 +48,7 @@ func fromDir(v *viper.Viper, path string) (*viper.Viper, error) {
 	for _, f := range files {
 		key := f.Name()
 		bs, _ := ioutil.ReadFile(path + "/" + key)
-		value := string(bs)
+		value := strings.TrimSpace(string(bs))
 		v.Set(key, value)
 	}
 
